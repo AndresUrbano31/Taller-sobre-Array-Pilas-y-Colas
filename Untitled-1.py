@@ -43,127 +43,127 @@ TYPE_EMOJI = {
     "Express": "🟠",
 }
 
-CATEGORIAS = ["Normal", "Frágil", "Pesado", "Express", "Devolución", "Refrigerado"]
-SLOTS_POR_CATEGORIA = 5
-CAPACIDAD_CAMION = 8
+CATEGORIES = ["Normal", "Frágil", "Pesado", "Express", "Devolución", "Refrigerado"]
+SLOTS_PER_CATEGORY = 5
+TRUCK_CAPACITY = 8
 
 # ──────────────────────────────────────────────────────────────
-#  ESTRUCTURAS DE DATOS
+#  DATA STRUCTURES
 # ──────────────────────────────────────────────────────────────
 
-class Cola:
-    """Cola FIFO — recepción de pedidos en orden de llegada."""
+class Queue:
+    """FIFO Queue — reception of orders in arrival order."""
     def __init__(self):
-        self._datos = deque()
+        self._data = deque()
 
-    def encolar(self, paquete):
-        self._datos.append(paquete)
+    def enqueue(self, package):
+        self._data.append(package)
 
-    def desencolar(self):
-        if self.esta_vacia():
+    def dequeue(self):
+        if self.is_empty():
             raise IndexError("Cola vacía")
-        return self._datos.popleft()
+        return self._data.popleft()
 
-    def frente(self):
-        return self._datos[0] if self._datos else None
+    def front(self):
+        return self._data[0] if self._data else None
 
-    def esta_vacia(self):
-        return len(self._datos) == 0
+    def is_empty(self):
+        return len(self._data) == 0
 
-    def tamaño(self):
-        return len(self._datos)
+    def size(self):
+        return len(self._data)
 
-    def elementos(self):
-        return list(self._datos)
+    def elements(self):
+        return list(self._data)
 
 
-class Pila:
-    """Pila LIFO — carga del camión: último en entrar, primero en salir."""
-    def __init__(self, capacidad=CAPACIDAD_CAMION):
-        self._datos = []
-        self.capacidad = capacidad
+class Stack:
+    """LIFO Stack — truck loading: last in, first out."""
+    def __init__(self, capacity=TRUCK_CAPACITY):
+        self._data = []
+        self.capacity = capacity
 
-    def apilar(self, paquete):
-        if self.esta_llena():
+    def push(self, package):
+        if self.is_full():
             raise OverflowError("Pila llena (camión al máximo)")
-        self._datos.append(paquete)
+        self._data.append(package)
 
-    def desapilar(self):
-        if self.esta_vacia():
+    def pop(self):
+        if self.is_empty():
             raise IndexError("Pila vacía")
-        return self._datos.pop()
+        return self._data.pop()
 
-    def tope(self):
-        return self._datos[-1] if self._datos else None
+    def peek(self):
+        return self._data[-1] if self._data else None
 
-    def esta_vacia(self):
-        return len(self._datos) == 0
+    def is_empty(self):
+        return len(self._data) == 0
 
-    def esta_llena(self):
-        return len(self._datos) >= self.capacidad
+    def is_full(self):
+        return len(self._data) >= self.capacity
 
-    def tamaño(self):
-        return len(self._datos)
+    def size(self):
+        return len(self._data)
 
-    def elementos(self):
-        return list(self._datos)
+    def elements(self):
+        return list(self._data)
 
 
-class ArrayEstantes:
+class ShelfArray:
     """
-    Array bidimensional [categoría][slot] — inventario de posiciones
-    físicas fijas en los pasillos del almacén.
+    2D Array [category][slot] — inventory of fixed physical positions
+    in the warehouse aisles.
     """
-    def __init__(self, categorias, slots):
-        self.categorias = categorias
+    def __init__(self, categories, slots):
+        self.categories = categories
         self.slots = slots
-        # Array: None = libre, Paquete = ocupado
-        self._datos = [[None] * slots for _ in range(len(categorias))]
+        # Array: None = free, Package = occupied
+        self._data = [[None] * slots for _ in range(len(categories))]
 
-    def guardar(self, paquete):
-        cat_idx = self.categorias.index(paquete.tipo) if paquete.tipo in self.categorias else 0
+    def store(self, package):
+        cat_idx = self.categories.index(package.type) if package.type in self.categories else 0
         for slot in range(self.slots):
-            if self._datos[cat_idx][slot] is None:
-                self._datos[cat_idx][slot] = paquete
+            if self._data[cat_idx][slot] is None:
+                self._data[cat_idx][slot] = package
                 return cat_idx, slot
-        return None, None  # sin espacio en esa categoría
+        return None, None  # no space in that category
 
-    def retirar(self, pkg_id):
-        for cat in range(len(self.categorias)):
+    def remove(self, pkg_id):
+        for cat in range(len(self.categories)):
             for slot in range(self.slots):
-                p = self._datos[cat][slot]
+                p = self._data[cat][slot]
                 if p and p.id == pkg_id:
-                    self._datos[cat][slot] = None
+                    self._data[cat][slot] = None
                     return cat, slot
         return None, None
 
-    def obtener_todo(self):
-        return [row[:] for row in self._datos]
+    def get_all(self):
+        return [row[:] for row in self._data]
 
-    def total_ocupado(self):
-        return sum(1 for row in self._datos for cell in row if cell)
+    def total_occupied(self):
+        return sum(1 for row in self._data for cell in row if cell)
 
 
 # ──────────────────────────────────────────────────────────────
-#  MODELO
+#  MODEL
 # ──────────────────────────────────────────────────────────────
 
-class Paquete:
-    _contador = 1
+class Package:
+    _counter = 1
 
-    def __init__(self, pkg_id, destino, tipo):
-        self.id = pkg_id or f"PKG-{Paquete._contador:03d}"
-        Paquete._contador += 1
-        self.destino = destino
-        self.tipo = tipo
-        self.hora = datetime.now().strftime("%H:%M:%S")
+    def __init__(self, pkg_id, destination, pkg_type):
+        self.id = pkg_id or f"PKG-{Package._counter:03d}"
+        Package._counter += 1
+        self.destination = destination
+        self.type = pkg_type
+        self.time = datetime.now().strftime("%H:%M:%S")
 
     def __repr__(self):
-        return f"Paquete({self.id}, {self.destino}, {self.tipo})"
+        return f"Package({self.id}, {self.destination}, {self.type})"
 
 
 # ──────────────────────────────────────────────────────────────
-#  APLICACIÓN TKINTER
+#  TKINTER APPLICATION
 # ──────────────────────────────────────────────────────────────
 
 class AmazonHubApp(tk.Tk):
@@ -175,26 +175,26 @@ class AmazonHubApp(tk.Tk):
         self.minsize(1100, 700)
         self.resizable(True, True)
 
-        # Estructuras
-        self.cola    = Cola()
-        self.pila    = Pila(CAPACIDAD_CAMION)
-        self.estantes = ArrayEstantes(CATEGORIAS, SLOTS_POR_CATEGORIA)
-        self.entregados = 0
-        self.total_reg  = 0
+        # Structures
+        self.queue    = Queue()
+        self.stack    = Stack(TRUCK_CAPACITY)
+        self.shelves  = ShelfArray(CATEGORIES, SLOTS_PER_CATEGORY)
+        self.delivered_count = 0
+        self.total_registered  = 0
 
-        # Estilo ttk
-        self._configurar_estilos()
+        # TTK Style
+        self._configure_styles()
 
         # Layout
         self._build_header()
         self._build_body()
 
-        # Demo inicial
-        self._cargar_demo()
+        # Initial Demo
+        self._load_demo()
 
-    # ── ESTILOS ──────────────────────────────────────────────
+    # ── STYLES ──────────────────────────────────────────────
 
-    def _configurar_estilos(self):
+    def _configure_styles(self):
         style = ttk.Style(self)
         style.theme_use("clam")
         style.configure("TFrame",       background=C["bg"])
@@ -246,9 +246,9 @@ class AmazonHubApp(tk.Tk):
         stats_f.pack(side="right", padx=16)
 
         self.lbl_h_total     = self._hstat(stats_f, "TOTAL")
-        self.lbl_h_cola      = self._hstat(stats_f, "EN COLA")
-        self.lbl_h_camion    = self._hstat(stats_f, "CAMIÓN")
-        self.lbl_h_entregado = self._hstat(stats_f, "ENTREGADOS")
+        self.lbl_h_queue     = self._hstat(stats_f, "EN COLA")
+        self.lbl_h_truck     = self._hstat(stats_f, "CAMIÓN")
+        self.lbl_h_delivered = self._hstat(stats_f, "ENTREGADOS")
 
         # Status
         status_f = tk.Frame(hdr, bg="#0a0d12")
@@ -272,28 +272,28 @@ class AmazonHubApp(tk.Tk):
         body = tk.Frame(self, bg=C["bg"])
         body.pack(fill="both", expand=True)
 
-        # Columna izquierda — Cola
+        # Left Column — Queue
         self._build_queue_panel(body)
 
-        # Centro
+        # Center
         self._build_center(body)
 
-        # Columna derecha — Inventario
+        # Right Column — Inventory
         self._build_inventory_panel(body)
 
-    # ── PANEL COLA ───────────────────────────────────────────
+    # ── QUEUE PANEL ───────────────────────────────────────────
 
     def _build_queue_panel(self, parent):
         frame = self._card(parent, side="left", width=280, fill="y")
 
-        # Título
+        # Title
         self._panel_title(frame, "📥  COLA DE RECEPCIÓN",
                           "Estructura: Queue (FIFO)", C["cyan"])
 
         # Hint
         self._hint(frame, "⚡ FIFO: primero en llegar = primero en procesar")
 
-        # Lista
+        # List
         list_frame = tk.Frame(frame, bg=C["surface"])
         list_frame.pack(fill="both", expand=True, padx=8)
 
@@ -312,17 +312,17 @@ class AmazonHubApp(tk.Tk):
             lambda e: self.queue_canvas.configure(
                 scrollregion=self.queue_canvas.bbox("all")))
 
-        # Stats pequeñas
+        # Small Stats
         sg = tk.Frame(frame, bg=C["surface"], pady=6)
         sg.pack(fill="x", padx=8, pady=(0, 8))
         g = tk.Frame(sg, bg=C["surface"])
         g.pack(fill="x")
-        self.stat_cola     = self._mini_stat(g, "0", "EN COLA",    C["cyan"])
-        self.stat_entregad = self._mini_stat(g, "0", "ENTREGADOS", C["green"])
-        self.stat_cam_stat = self._mini_stat(g, "0", "EN CAMIÓN",  C["purple"])
-        self.stat_estante  = self._mini_stat(g, "0", "ESTANTES",   C["amazon"])
+        self.stat_queue     = self._mini_stat(g, "0", "EN COLA",    C["cyan"])
+        self.stat_delivered = self._mini_stat(g, "0", "ENTREGADOS", C["green"])
+        self.stat_truck_load = self._mini_stat(g, "0", "EN CAMIÓN",  C["purple"])
+        self.stat_shelf     = self._mini_stat(g, "0", "ESTANTES",   C["amazon"])
 
-    # ── CENTRO ───────────────────────────────────────────────
+    # ── CENTER ───────────────────────────────────────────────
 
     def _build_center(self, parent):
         center = tk.Frame(parent, bg=C["bg"])
@@ -330,7 +330,7 @@ class AmazonHubApp(tk.Tk):
 
         self._build_input_section(center)
 
-        # Área principal dividida: estantes arriba, camión abajo
+        # Main area split: shelves top, truck bottom
         main_area = tk.Frame(center, bg=C["bg"])
         main_area.pack(fill="both", expand=True)
 
@@ -354,18 +354,18 @@ class AmazonHubApp(tk.Tk):
                     ["Normal", "Frágil", "Pesado", "Express"])
 
         tk.Frame(row1, bg=C["surface"], width=12).pack(side="left")
-        self._btn(row1, "+ REGISTRAR", self.registrar_paquete,
+        self._btn(row1, "+ REGISTRAR", self.register_package,
                   C["amazon"], "#000", side="left")
 
-        # Row 2 — acciones
+        # Row 2 — actions
         row2 = tk.Frame(inp, bg=C["surface"])
         row2.pack(fill="x")
 
-        self._btn(row2, "▶ Procesar Cola",    self.procesar_cola,    C["cyan"],    "#000")
-        self._btn(row2, "🚛 Cargar Camión",   self.cargar_camion,    C["purple"],  "#fff")
-        self._btn(row2, "⬇ Descargar (LIFO)", self.descargar_camion, C["yellow"],  "#000")
-        self._btn(row2, "🚀 Despachar",        self.despachar_camion, C["green"],   "#000")
-        self._btn(row2, "⟳ Reset",             self.reset_todo,       C["red"],     "#fff")
+        self._btn(row2, "▶ Procesar Cola",    self.process_queue,    C["cyan"],    "#000")
+        self._btn(row2, "🚛 Cargar Camión",   self.load_truck,    C["purple"],  "#fff")
+        self._btn(row2, "⬇ Descargar (LIFO)", self.unload_truck, C["yellow"],  "#000")
+        self._btn(row2, "🚀 Despachar",        self.dispatch_truck, C["green"],   "#000")
+        self._btn(row2, "⟳ Reset",             self.reset_all,       C["red"],     "#fff")
 
     def _build_shelf_visual(self, parent):
         frame = self._card(parent, side="top", fill="x", pady_inner=8)
@@ -381,22 +381,22 @@ class AmazonHubApp(tk.Tk):
         grid_f = tk.Frame(frame, bg=C["surface"])
         grid_f.pack(fill="x", padx=10, pady=(0, 8))
 
-        # Encabezados de slots
+        # Slot Headers
         tk.Label(grid_f, text="CATEGORÍA", bg=C["surface"],
                  fg=C["text_dim"], font=("Consolas", 7), width=12,
                  anchor="w").grid(row=0, column=0, padx=2, pady=2)
-        for s in range(SLOTS_POR_CATEGORIA):
+        for s in range(SLOTS_PER_CATEGORY):
             tk.Label(grid_f, text=f"SLOT {s+1}", bg=C["surface"],
                      fg=C["text_dim"], font=("Consolas", 7),
                      width=11).grid(row=0, column=s+1, padx=2)
 
         self.shelf_cells = []
-        for r, cat in enumerate(CATEGORIAS):
+        for r, cat in enumerate(CATEGORIES):
             tk.Label(grid_f, text=cat, bg=C["surface"],
                      fg=C["text_dim"], font=("Consolas", 8),
                      width=12, anchor="w").grid(row=r+1, column=0, padx=2, pady=2)
             row_cells = []
-            for s in range(SLOTS_POR_CATEGORIA):
+            for s in range(SLOTS_PER_CATEGORY):
                 cell = tk.Label(grid_f, text=f"[  {cat[:3].upper()}-S{s+1}  ]",
                                 bg=C["surface2"], fg=C["border"],
                                 font=("Consolas", 7), width=11,
@@ -426,13 +426,13 @@ class AmazonHubApp(tk.Tk):
                    "⬆ ÚLTIMO EN ENTRAR = PRIMERO EN SALIR · "
                    "Optimiza que el destino más cercano quede en el tope")
 
-        # Área de la pila — muestra de arriba (tope) hacia abajo
+        # Stack Area — display from top (peek) to bottom
         self.truck_frame = tk.Frame(frame, bg=C["surface2"],
                                     relief="flat", bd=1)
         self.truck_frame.pack(fill="x", padx=10, pady=(0, 8))
 
         self.truck_rows = []
-        for i in range(CAPACIDAD_CAMION):
+        for i in range(TRUCK_CAPACITY):
             row = tk.Label(self.truck_frame,
                            text="",
                            bg=C["surface2"],
@@ -453,7 +453,7 @@ class AmazonHubApp(tk.Tk):
         tk.Label(hdr, text="⬛ REGISTRO DE OPERACIONES",
                  bg=C["surface"], fg=C["text_dim"],
                  font=("Consolas", 8)).pack(side="left", padx=10, pady=4)
-        tk.Button(hdr, text="LIMPIAR", command=self._limpiar_log,
+        tk.Button(hdr, text="LIMPIAR", command=self._clear_log,
                   bg=C["surface"], fg=C["text_dim"], relief="flat",
                   font=("Consolas", 7), cursor="hand2",
                   activebackground=C["surface2"],
@@ -480,7 +480,7 @@ class AmazonHubApp(tk.Tk):
         self.log_text.tag_configure("purple",  foreground=C["purple"])
         self.log_text.tag_configure("time",    foreground=C["text_dim"])
 
-    # ── PANEL INVENTARIO ─────────────────────────────────────
+    # ── INVENTORY PANEL ─────────────────────────────────────
 
     def _build_inventory_panel(self, parent):
         frame = self._card(parent, side="right", width=280, fill="y")
@@ -489,7 +489,7 @@ class AmazonHubApp(tk.Tk):
                           "Estructura: Array[cat][slot]", C["amazon"])
         self._hint(frame, "📐 Posiciones físicas fijas por categoría y slot")
 
-        # Lista scrolleable
+        # Scrollable List
         inv_frame = tk.Frame(frame, bg=C["surface"])
         inv_frame.pack(fill="both", expand=True, padx=8)
 
@@ -507,7 +507,7 @@ class AmazonHubApp(tk.Tk):
             lambda e: self.inv_canvas.configure(
                 scrollregion=self.inv_canvas.bbox("all")))
 
-        # Ruta óptima
+        # Optimal Route
         sep = tk.Frame(frame, bg=C["border"], height=1)
         sep.pack(fill="x", padx=8, pady=4)
 
@@ -526,128 +526,128 @@ class AmazonHubApp(tk.Tk):
                                         font=("Consolas", 8))
         self.lbl_route_empty.pack(anchor="w")
 
-    # ── OPERACIONES PRINCIPALES ───────────────────────────────
+    # ── MAIN OPERATIONS ───────────────────────────────
 
-    def registrar_paquete(self):
+    def register_package(self):
         pkg_id = self.pkg_id_var.get().strip().upper()
-        destino = self.pkg_dest_var.get().strip()
-        tipo = self.pkg_type_var.get()
+        destination = self.pkg_dest_var.get().strip()
+        pkg_type = self.pkg_type_var.get()
 
-        if not destino:
+        if not destination:
             messagebox.showwarning("Campo requerido", "Ingresa el destino del paquete.")
             return
 
         if not pkg_id:
-            pkg_id = f"PKG-{self.total_reg + 1:03d}"
+            pkg_id = f"PKG-{self.total_registered + 1:03d}"
 
-        pkg = Paquete(pkg_id, destino, tipo)
-        self.total_reg += 1
+        pkg = Package(pkg_id, destination, pkg_type)
+        self.total_registered += 1
 
-        # → Cola FIFO
-        self.cola.encolar(pkg)
+        # → FIFO Queue
+        self.queue.enqueue(pkg)
 
-        # → Array estantes
-        cat_idx, slot = self.estantes.guardar(pkg)
+        # → Shelf Array
+        cat_idx, slot = self.shelves.store(pkg)
         if cat_idx is not None:
-            cat_nombre = CATEGORIAS[cat_idx]
-            self.log(f"📥 Cola.encolar({pkg.id}) → destino: {pkg.destino} | tipo: {pkg.tipo}", "info")
-            self.log(f"📐 Array.guardar() → Estante {cat_nombre}-S{slot+1}", "warn")
+            cat_name = CATEGORIES[cat_idx]
+            self.log(f"📥 Queue.enqueue({pkg.id}) → destino: {pkg.destination} | tipo: {pkg.type}", "info")
+            self.log(f"📐 Array.store() → Estante {cat_name}-S{slot+1}", "warn")
         else:
-            self.log(f"📥 Cola.encolar({pkg.id}) → estantes de {tipo} llenos", "warn")
+            self.log(f"📥 Queue.enqueue({pkg.id}) → estantes de {pkg_type} llenos", "warn")
 
-        # Limpiar inputs
+        # Clear inputs
         self.pkg_id_var.set("")
         self.pkg_dest_var.set("")
 
-        self._actualizar_todo()
+        self._update_all()
 
-    def procesar_cola(self):
-        if self.cola.esta_vacia():
+    def process_queue(self):
+        if self.queue.is_empty():
             self.log("⚠ Cola vacía — no hay paquetes que procesar", "error")
             return
-        pkg = self.cola.desencolar()
-        self.log(f"▶ Cola.desencolar() → {pkg.id} procesado (FIFO: primero en llegar)", "success")
+        pkg = self.queue.dequeue()
+        self.log(f"▶ Queue.dequeue() → {pkg.id} procesado (FIFO: primero en llegar)", "success")
         self.log(f"   Paquete {pkg.id} listo para cargar al camión", "info")
-        self._actualizar_todo()
+        self._update_all()
 
-    def cargar_camion(self):
-        if self.cola.esta_vacia():
+    def load_truck(self):
+        if self.queue.is_empty():
             self.log("⚠ No hay paquetes en cola para cargar al camión", "error")
             return
-        if self.pila.esta_llena():
-            self.log("⚠ Pila.apilar() → OVERFLOW: camión lleno (8/8)", "error")
+        if self.stack.is_full():
+            self.log("⚠ Stack.push() → OVERFLOW: camión lleno (8/8)", "error")
             return
-        pkg = self.cola.desencolar()
-        self.pila.apilar(pkg)
-        self.log(f"🚛 Pila.apilar({pkg.id}) → camión [{self.pila.tamaño()}/{self.pila.capacidad}] | LIFO activo", "purple")
-        self._actualizar_todo()
+        pkg = self.queue.dequeue()
+        self.stack.push(pkg)
+        self.log(f"🚛 Stack.push({pkg.id}) → camión [{self.stack.size()}/{self.stack.capacity}] | LIFO activo", "purple")
+        self._update_all()
 
-    def descargar_camion(self):
-        if self.pila.esta_vacia():
+    def unload_truck(self):
+        if self.stack.is_empty():
             self.log("⚠ Pila vacía — camión sin carga", "error")
             return
-        pkg = self.pila.desapilar()
-        self.log(f"⬇ Pila.desapilar() → {pkg.id} descargado (LIFO: último en entrar, primero en salir)", "purple")
-        self._actualizar_todo()
+        pkg = self.stack.pop()
+        self.log(f"⬇ Stack.pop() → {pkg.id} descargado (LIFO: último en entrar, primero en salir)", "purple")
+        self._update_all()
 
-    def despachar_camion(self):
-        if self.pila.esta_vacia():
+    def dispatch_truck(self):
+        if self.stack.is_empty():
             self.log("⚠ Camión vacío — carga paquetes primero", "error")
             return
-        cantidad = self.pila.tamaño()
-        self.log(f"🚀 DESPACHO — Camión con {cantidad} paquetes en ruta LIFO", "success")
+        count = self.stack.size()
+        self.log(f"🚀 DESPACHO — Camión con {count} paquetes en ruta LIFO", "success")
 
-        # Desapilar en orden LIFO y entregar
-        orden = 1
-        while not self.pila.esta_vacia():
-            pkg = self.pila.desapilar()
-            self.entregados += 1
-            self.estantes.retirar(pkg.id)
-            self.log(f"   📍 Parada {orden}: {pkg.id} entregado en {pkg.destino}", "success")
-            orden += 1
+        # Pop in LIFO order and deliver
+        order = 1
+        while not self.stack.is_empty():
+            pkg = self.stack.pop()
+            self.delivered_count += 1
+            self.shelves.remove(pkg.id)
+            self.log(f"   📍 Parada {order}: {pkg.id} entregado en {pkg.destination}", "success")
+            order += 1
 
-        self.log(f"✅ Camión regresó — {cantidad} paquetes entregados", "success")
-        self._actualizar_todo()
+        self.log(f"✅ Camión regresó — {count} paquetes entregados", "success")
+        self._update_all()
 
-    def reset_todo(self):
+    def reset_all(self):
         if not messagebox.askyesno("Confirmar Reset",
                                    "¿Reiniciar todo el sistema?"):
             return
-        self.cola      = Cola()
-        self.pila      = Pila(CAPACIDAD_CAMION)
-        self.estantes  = ArrayEstantes(CATEGORIAS, SLOTS_POR_CATEGORIA)
-        self.entregados = 0
-        self.total_reg  = 0
-        Paquete._contador = 1
+        self.queue      = Queue()
+        self.stack      = Stack(TRUCK_CAPACITY)
+        self.shelves  = ShelfArray(CATEGORIES, SLOTS_PER_CATEGORY)
+        self.delivered_count = 0
+        self.total_registered  = 0
+        Package._counter = 1
         self.log("⟳ Sistema reiniciado completamente", "warn")
-        self._actualizar_todo()
+        self._update_all()
 
-    # ── ACTUALIZACIONES UI ────────────────────────────────────
+    # ── UI UPDATES ────────────────────────────────────
 
-    def _actualizar_todo(self):
-        self._actualizar_cola_panel()
-        self._actualizar_camion()
-        self._actualizar_estantes()
-        self._actualizar_inventario()
-        self._actualizar_ruta()
-        self._actualizar_header()
+    def _update_all(self):
+        self._update_queue_panel()
+        self._update_truck_panel()
+        self._update_shelves()
+        self._update_inventory()
+        self._update_route()
+        self._update_header()
 
-    def _actualizar_header(self):
-        en_estante = self.estantes.total_ocupado()
-        self.lbl_h_total.config(     text=str(self.total_reg))
-        self.lbl_h_cola.config(      text=str(self.cola.tamaño()))
-        self.lbl_h_camion.config(    text=str(self.pila.tamaño()))
-        self.lbl_h_entregado.config( text=str(self.entregados))
-        self.stat_cola.config(     text=str(self.cola.tamaño()))
-        self.stat_entregad.config( text=str(self.entregados))
-        self.stat_cam_stat.config( text=str(self.pila.tamaño()))
-        self.stat_estante.config(  text=str(en_estante))
+    def _update_header(self):
+        on_shelf = self.shelves.total_occupied()
+        self.lbl_h_total.config(     text=str(self.total_registered))
+        self.lbl_h_queue.config(      text=str(self.queue.size()))
+        self.lbl_h_truck.config(    text=str(self.stack.size()))
+        self.lbl_h_delivered.config( text=str(self.delivered_count))
+        self.stat_queue.config(     text=str(self.queue.size()))
+        self.stat_delivered.config( text=str(self.delivered_count))
+        self.stat_truck_load.config( text=str(self.stack.size()))
+        self.stat_shelf.config(  text=str(on_shelf))
 
-    def _actualizar_cola_panel(self):
+    def _update_queue_panel(self):
         for w in self.queue_inner.winfo_children():
             w.destroy()
 
-        items = self.cola.elementos()
+        items = self.queue.elements()
         if not items:
             tk.Label(self.queue_inner, text="📭  Cola vacía\nRegistra un paquete",
                      bg=C["surface"], fg=C["text_dim"],
@@ -656,7 +656,7 @@ class AmazonHubApp(tk.Tk):
             return
 
         for i, pkg in enumerate(items):
-            color = TYPE_COLOR.get(pkg.tipo, C["cyan"])
+            color = TYPE_COLOR.get(pkg.type, C["cyan"])
             bg = C["surface2"] if i > 0 else C["surface"]
             num_bg = color if i == 0 else C["border"]
             num_fg = "#000" if i == 0 else C["text_dim"]
@@ -672,66 +672,66 @@ class AmazonHubApp(tk.Tk):
             info = tk.Frame(row, bg=bg)
             info.pack(side="left", fill="x", expand=True)
 
-            tk.Label(info, text=f"{TYPE_EMOJI.get(pkg.tipo,'')} {pkg.id}",
+            tk.Label(info, text=f"{TYPE_EMOJI.get(pkg.type,'')} {pkg.id}",
                      bg=bg, fg=color,
                      font=("Consolas", 9, "bold")).pack(anchor="w")
-            tk.Label(info, text=f"▸ {pkg.destino}",
+            tk.Label(info, text=f"▸ {pkg.destination}",
                      bg=bg, fg=C["text_dim"],
                      font=("Consolas", 7)).pack(anchor="w")
 
-            tk.Label(row, text=pkg.tipo.upper(),
+            tk.Label(row, text=pkg.type.upper(),
                      bg=bg, fg=color,
                      font=("Consolas", 7),
                      padx=4).pack(side="right", padx=4)
 
-    def _actualizar_camion(self):
-        # Mostrar pila de abajo a arriba visualmente (tope arriba)
-        elems = list(reversed(self.pila.elementos()))
+    def _update_truck_panel(self):
+        # Show stack from bottom to top visually (peek at top)
+        elems = list(reversed(self.stack.elements()))
         self.lbl_camion_cap.config(
-            text=f"{self.pila.tamaño()} / {self.pila.capacidad} paquetes")
+            text=f"{self.stack.size()} / {self.stack.capacity} paquetes")
 
         for i, row_lbl in enumerate(self.truck_rows):
             if i < len(elems):
                 pkg = elems[i]
-                color = TYPE_COLOR.get(pkg.tipo, C["purple"])
+                color = TYPE_COLOR.get(pkg.type, C["purple"])
                 es_tope = (i == 0)
                 sufijo = "  ← SALE PRIMERO" if es_tope else ""
                 row_lbl.config(
-                    text=f"  {TYPE_EMOJI.get(pkg.tipo,'')} {pkg.id:10s} {pkg.destino:18s}{sufijo}",
+                    text=f"  {TYPE_EMOJI.get(pkg.type,'')} {pkg.id:10s} {pkg.destination:18s}{sufijo}",
                     bg=C["surface2"] if not es_tope else "#2d1f42",
                     fg=C["text"] if es_tope else C["purple"],
                     font=("Consolas", 9, "bold" if es_tope else "normal"))
             else:
                 row_lbl.config(text="", bg=C["surface2"], fg=C["surface2"])
 
-    def _actualizar_estantes(self):
-        datos = self.estantes.obtener_todo()
+    def _update_shelves(self):
+        data = self.shelves.get_all()
         for r, row_cells in enumerate(self.shelf_cells):
             for s, cell in enumerate(row_cells):
-                pkg = datos[r][s]
+                pkg = data[r][s]
                 if pkg:
-                    color = TYPE_COLOR.get(pkg.tipo, C["amazon"])
+                    color = TYPE_COLOR.get(pkg.type, C["amazon"])
                     cell.config(text=f"{pkg.id[:8]:^11}",
                                 bg="#1c2a1c", fg=color,
                                 relief="ridge")
                 else:
-                    cat = CATEGORIAS[r]
+                    cat = CATEGORIES[r]
                     cell.config(text=f"[{cat[:3].upper()}-S{s+1}]",
                                 bg=C["surface2"], fg=C["border"],
                                 relief="flat")
 
-    def _actualizar_inventario(self):
+    def _update_inventory(self):
         for w in self.inv_inner.winfo_children():
             w.destroy()
 
-        datos = self.estantes.obtener_todo()
+        data = self.shelves.get_all()
         total = 0
 
-        for r, cat in enumerate(CATEGORIAS):
-            items = [(datos[r][s], s) for s in range(SLOTS_POR_CATEGORIA)
-                     if datos[r][s] is not None]
+        for r, cat in enumerate(CATEGORIES):
+            items = [(data[r][s], s) for s in range(SLOTS_PER_CATEGORY)
+                     if data[r][s] is not None]
 
-            # Cabecera de categoría
+            # Category Header
             cat_hdr = tk.Frame(self.inv_inner, bg=C["surface2"])
             cat_hdr.pack(fill="x", padx=4, pady=(4, 1))
             color = TYPE_COLOR.get(cat, C["amazon"])
@@ -739,7 +739,7 @@ class AmazonHubApp(tk.Tk):
                      bg=C["surface2"], fg=color,
                      font=("Consolas", 8, "bold"),
                      padx=6, pady=2).pack(side="left")
-            tk.Label(cat_hdr, text=f"{len(items)}/{SLOTS_POR_CATEGORIA}",
+            tk.Label(cat_hdr, text=f"{len(items)}/{SLOTS_PER_CATEGORY}",
                      bg=C["surface2"], fg=C["text_dim"],
                      font=("Consolas", 7)).pack(side="right", padx=6)
 
@@ -754,11 +754,11 @@ class AmazonHubApp(tk.Tk):
                     tk.Label(row, text="",
                              bg=color, width=2).pack(side="left")
                     tk.Label(row,
-                             text=f" {TYPE_EMOJI.get(pkg.tipo,'')} {pkg.id}",
+                             text=f" {TYPE_EMOJI.get(pkg.type,'')} {pkg.id}",
                              bg=C["surface"], fg=C["text"],
                              font=("Consolas", 8)).pack(side="left")
                     tk.Label(row,
-                             text=f"S{slot+1} · {pkg.destino[:12]}",
+                             text=f"S{slot+1} · {pkg.destination[:12]}",
                              bg=C["surface"], fg=C["text_dim"],
                              font=("Consolas", 7)).pack(side="right", padx=4)
                     total += 1
@@ -769,11 +769,11 @@ class AmazonHubApp(tk.Tk):
                      bg=C["surface"], fg=C["text_dim"],
                      font=("Consolas", 8), pady=10).pack()
 
-    def _actualizar_ruta(self):
+    def _update_route(self):
         for w in self.route_frame.winfo_children():
             w.destroy()
 
-        elems = list(reversed(self.pila.elementos()))  # tope primero
+        elems = list(reversed(self.stack.elements()))  # peek first
         if not elems:
             tk.Label(self.route_frame,
                      text="Carga el camión para ver la ruta",
@@ -782,7 +782,7 @@ class AmazonHubApp(tk.Tk):
             return
 
         for i, pkg in enumerate(elems):
-            color = TYPE_COLOR.get(pkg.tipo, C["purple"])
+            color = TYPE_COLOR.get(pkg.type, C["purple"])
             row = tk.Frame(self.route_frame, bg=C["surface"])
             row.pack(fill="x", pady=1)
 
@@ -794,10 +794,10 @@ class AmazonHubApp(tk.Tk):
 
             info = tk.Frame(row, bg=C["surface"])
             info.pack(side="left", fill="x")
-            tk.Label(info, text=pkg.destino,
+            tk.Label(info, text=pkg.destination,
                      bg=C["surface"], fg=C["text"],
                      font=("Consolas", 8)).pack(anchor="w")
-            tk.Label(info, text=f"{TYPE_EMOJI.get(pkg.tipo,'')} {pkg.id} · {pkg.tipo}",
+            tk.Label(info, text=f"{TYPE_EMOJI.get(pkg.type,'')} {pkg.id} · {pkg.type}",
                      bg=C["surface"], fg=color,
                      font=("Consolas", 7)).pack(anchor="w")
 
@@ -810,7 +810,7 @@ class AmazonHubApp(tk.Tk):
         self.log_text.insert("1.0", f"[{hora}] ", "time")
         self.log_text.config(state="disabled")
 
-    def _limpiar_log(self):
+    def _clear_log(self):
         self.log_text.config(state="normal")
         self.log_text.delete("1.0", "end")
         self.log_text.config(state="disabled")
@@ -890,23 +890,23 @@ class AmazonHubApp(tk.Tk):
                  font=("Consolas", 6)).pack()
         return lbl_val
 
-    # ── DEMO ─────────────────────────────────────────────────
+    # ── DEMO ────────────────────────────────────────────────
 
-    def _cargar_demo(self):
+    def _load_demo(self):
         demos = [
             ("PKG-001", "Zona Norte",     "Express"),
             ("PKG-002", "Zona Sur",       "Frágil"),
             ("PKG-003", "Zona Este",      "Normal"),
             ("PKG-004", "Centro Urbano",  "Pesado"),
         ]
-        for pid, dest, tipo in demos:
+        for pid, dest, pkg_type in demos:
             self.pkg_id_var.set(pid)
             self.pkg_dest_var.set(dest)
-            self.pkg_type_var.set(tipo)
-            self.registrar_paquete()
+            self.pkg_type_var.set(pkg_type)
+            self.register_package()
 
         self.log("🏭 Sistema Amazon Hub iniciado — demo cargado con 4 paquetes", "success")
-        self._actualizar_todo()
+        self._update_all()
 
 
 # ──────────────────────────────────────────────────────────────
