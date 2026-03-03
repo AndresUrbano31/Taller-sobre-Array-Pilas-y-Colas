@@ -1,8 +1,0 @@
-Simulador de Logística y Rutas de Entrega (Amazon Hub)
-Contexto
-Gestionar un centro de distribución masivo donde los paquetes llegan, se clasifican y se despachan.
-
-Estructuras de Datos Utilizadas
-Donde Usar Colas: Recepción de pedidos de los clientes en orden de llegada.
-Donde Usar Pilas: Gestión de carga en camiones de tipo LIFO (Last-In, First-Out). El último paquete en entrar al camión es el primero en salir en la ruta de entrega. Los estudiantes deben optimizar la carga para que el camión no tenga que vaciarse en cada parada.
-Donde Usar Arrays: Inventario de estanterías fijas del almacén. El array representa las posiciones físicas de los pasillos donde se guardan productos según su categoría.
